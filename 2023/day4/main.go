@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+<<<<<<< HEAD
 	"fmt"
 	"log"
 	"math"
@@ -62,3 +63,30 @@ func main() {
 	fmt.Println(cardCountSum)
 	//fmt.Println(sum)
 }
+=======
+	"log"
+	"os"
+    "strings"
+)
+
+func main() {
+    f, err := os.Open("./input.txt")    
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer f.Close()
+
+    scanner := bufio.NewScanner(f)
+
+    for scanner.Scan() {
+        rawLine := scanner.Text()
+        winningNumbers := make([]string, 0)
+        myNumbers := make([]string, 0)
+
+
+
+    }
+
+}
+
+>>>>>>> refs/remotes/origin/main
