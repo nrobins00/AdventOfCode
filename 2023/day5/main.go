@@ -44,31 +44,48 @@ func main() {
 	minConvertedSeedNum := math.MaxInt
 	startSeed := 0
 	count := 0
+	var seedRange SeedRange
+	var allSeedRanges []SeedRange
 	for len(strings.Trim(rawSeedLine, " ")) > 0 {
-		startSeed, count, rawSeedLine = parseOneSeedRange(rawSeedLine)
-		// for _, r := range allSeedRanges {
-		// 	if seedRange.start >= r.start && seedRange.start <= r.end {
-		// 		seedRange.start = r.end
-		// 	}
-		// 	if seedRange.
-		// }
+		seedRange, rawSeedLine = parseOneSeedRange(rawSeedLine)
+		allSeedRanges = append(allSeedRanges, seedRange)
+	}
+
+	removeDuplicateSeeds(allSeedRanges)
+
+	fmt.Println(allSeedRanges)
+
+	for _, seedRange := range allSeedRanges {
 		fmt.Printf("start: %v, count: %v\n", startSeed, count)
-		for i := 0; i < count; i++ {
-			seedNum := startSeed + i
+		for seedNum := seedRange.start; seedNum <= seedRange.end; seedNum++ {
 			//fmt.Println(seedNum)
 			convertedSeedNum := convertSeed(seedNum, conversions)
 			if convertedSeedNum < minConvertedSeedNum {
 				minConvertedSeedNum = convertedSeedNum
 			}
 		}
-
 	}
 	fmt.Println(minConvertedSeedNum)
 
 	//fmt.Println(conversions)
 }
 
-func parseOneSeedRange(s string) (int, int, string) {
+func removeDuplicateSeeds(allSeedRanges []SeedRange) {
+	for _, r1 := range allSeedRanges {
+		for _, r2 := range allSeedRanges {
+			if r1.start >= r2.start && r1.start <= r2.end {
+				r1.start = r2.end
+				fmt.Println("start brought up")
+			}
+			if r1.end >= r2.start && r1.end <= r2.end {
+				r1.end = r2.start
+				fmt.Println("end brought down")
+			}
+		}
+	}
+}
+
+func parseOneSeedRange(s string) (SeedRange, string) {
 	seedStrings := strings.SplitN(s, " ", 3)
 	//fmt.Println(seedStrings[0], " - ", seedStrings[1], " - ", seedStrings[2])
 	start, err := strconv.Atoi(seedStrings[0])
@@ -84,7 +101,10 @@ func parseOneSeedRange(s string) (int, int, string) {
 		remaining = seedStrings[2]
 	}
 
-	return start, count, remaining
+	return SeedRange{
+		start: start,
+		end:   start + count - 1,
+	}, remaining
 }
 
 func parseConversionRange(s string) *ConversionRange {
