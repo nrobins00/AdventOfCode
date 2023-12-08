@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -15,10 +16,12 @@ type Hand struct {
 	bid     int
 }
 
+type Rankings []Hand
+
 func main() {
 	data := parseInput("input.txt")
 
-	var rankings []Hand
+	var allHands []Hand
 
 	for _, rawLine := range data {
 		rawSlice := strings.Split(rawLine, " ")
@@ -36,47 +39,44 @@ func main() {
 			handVal: getValueForHand(hand),
 		}
 
-		placeToPutNewHand := -1
-		for key, val := range rankings {
-			if newHand.handVal > val.handVal {
-				placeToPutNewHand = key
-				rankings = placeNewHand(rankings, placeToPutNewHand, newHand)
-				break
-			}
-			if newHand.handVal == val.handVal {
-				//newHandIsGreater := false
-				//oldHandIsGreater := false
-				existingHand := val.hand
-				for i, newHandCharVal := range newHand.hand {
-					compare := findGreaterCard(newHandCharVal, rune(existingHand[i]))
-					if compare == 1 {
-						placeToPutNewHand = key
-						rankings = placeNewHand(rankings, placeToPutNewHand, newHand)
-						break
-					} else if compare == -1 {
-						break
-					}
-				}
-			}
-			if placeToPutNewHand > -1 {
-				break
-			}
-		}
-		if placeToPutNewHand == -1 {
-			rankings = placeNewHand(rankings, placeToPutNewHand, newHand)
-		}
+		allHands = append(allHands, newHand)
 	}
 
+	sort.Sort(Rankings(allHands))
+
 	winnings := 0
-	multiplier := len(rankings)
-	for _, hand := range rankings {
+	multiplier := 1
+	for _, hand := range allHands {
 		winnings += hand.bid * multiplier
-		multiplier--
+		multiplier++
 	}
 	fmt.Println(winnings)
 	//get hand
 	// get bid
 
+}
+
+func compareHands(a Hand, b Hand) bool {
+	if a.handVal == b.handVal {
+		for i := 0; i < 5; i++ {
+			comparison := compareCard(a.hand[i], b.hand[i])
+			if comparison == 0 {
+				continue
+			}
+			return comparison == 1
+		}
+	}
+	return a.handVal < b.handVal
+}
+
+func (r Rankings) Len() int { return len(r) }
+
+func (r Rankings) Less(i int, j int) bool {
+	return compareHands(r[i], r[j])
+}
+
+func (r Rankings) Swap(i, j int) {
+	r[i], r[j] = r[j], r[i]
 }
 
 func placeNewHand(rankings []Hand, place int, newHand Hand) []Hand {
@@ -91,14 +91,13 @@ func placeNewHand(rankings []Hand, place int, newHand Hand) []Hand {
 	return rankings
 }
 
-func findGreaterCard(a rune, b rune) int {
+func compareCard(a byte, b byte) int {
 	cardRanks := "J23456789TQKA"
 	aIndex := strings.Index(cardRanks, string(a))
 	bIndex := strings.Index(cardRanks, string(b))
-	if aIndex > bIndex {
-
+	if aIndex < bIndex {
 		return 1
-	} else if bIndex > aIndex {
+	} else if bIndex < aIndex {
 		return -1
 	} else {
 		return 0
