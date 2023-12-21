@@ -4,16 +4,17 @@ import (
 	"bufio"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"strconv"
 	"strings"
 )
 
 const (
-	Up    int = 1
-	Right     = 2
-	Down      = 3
-	Left      = 4
+	Up    int = 0
+	Right     = 1
+	Down      = 2
+	Left      = 3
 )
 
 type Vertex struct {
@@ -26,23 +27,108 @@ type Approach struct {
 	lineLength int //num steps in this direction
 }
 
+type Grid [][]int
+
 func main() {
 	data := parseInput("test.txt")
 
 	fmt.Println(data)
 
-	spt := make(map[Vertex]map[Approach]int)
+    
+
+	//spt := make(map[Vertex]map[Approach]int)
 
 	startVertex := Vertex{row: 0, col: 0}
 	endVertex := Vertex{len(data) - 1, len(data[0]) - 1}
 
-	startApproach := Approach{}
+    grid := Grid(data)
+    fmt.Println(grid.findShortestCostOuter(startVertex, endVertex))
 
-	for _, prs := spt[endVertex]; !prs; _, prs = spt[endVertex] {
+	//startApproach := Approach{}
 
-	}
+
+
+	//for _, prs := spt[endVertex]; !prs; _, prs = spt[endVertex] {
+    //    
+	//}
 
 	//fmt.Println(cost)
+}
+
+func (g Grid) findShortestCostOuter(start Vertex, end Vertex) int {
+    emptyMemo := make(map[string]int)
+    downStart := start.stepInDirection(Down)
+    nextCost := g[downStart.row][downStart.col]
+    downCost := g.findShortestCost(downStart, end, Down, 1, nextCost, emptyMemo)
+
+    rightStart := start.stepInDirection(Right)
+    nextCost = g[rightStart.row][rightStart.col]
+    rightCost := g.findShortestCost(rightStart, end, Right, 1, nextCost, emptyMemo)
+
+    return min(downCost, rightCost)
+}
+
+
+func (g Grid) findShortestCost(start Vertex, end Vertex, direction int, lineLen int, currentCost int, memo map[string]int) int {
+    uniqStr := strconv.Itoa(start.row) + ":" + strconv.Itoa(start.col) + strconv.Itoa(direction) + strconv.Itoa(lineLen) + strconv.Itoa(currentCost)
+    cost, prs := memo[uniqStr]
+    if prs {
+        return cost
+    }
+    if start.col == end.col && start.row + 1 == end.row {
+        return currentCost + g[end.row][end.col]
+    }
+    if start.row == end.row && start.col + 1 == end.col {
+        return currentCost + g[end.row][end.col]
+    }
+    var straightCost int
+    var leftCost int
+    var rightCost int
+    if lineLen < 3 {
+        nextStart := start.stepInDirection(direction)
+        if g.isVertexValid(nextStart) {
+            nextCost := currentCost + g[nextStart.row][nextStart.col]
+            straightCost = g.findShortestCost(nextStart, end, direction, lineLen + 1, nextCost, memo)
+        }
+    }
+    leftDirection := (direction - 1) % 4
+    leftStart := start.stepInDirection(leftDirection)
+    if g.isVertexValid(leftStart) {
+        nextCost := currentCost + g[leftStart.row][leftStart.col]
+        leftCost = g.findShortestCost(leftStart, end, leftDirection, 0, nextCost, memo)
+    }
+
+    rightDirection := (direction + 1) % 4
+    rightStart := start.stepInDirection(rightDirection)
+    if g.isVertexValid(rightStart) {
+        nextCost := currentCost + g[rightStart.row][rightStart.col]
+        rightCost = g.findShortestCost(rightStart, end, rightDirection, 0, nextCost, memo)
+    }
+    if straightCost == 0 { straightCost = math.MaxInt }
+    if leftCost == 0 { leftCost = math.MaxInt }
+    if rightCost == 0 { rightCost = math.MaxInt }
+    
+    totalMin := min(straightCost, leftCost, rightCost)
+    memo[uniqStr] = totalMin
+    return totalMin
+}
+
+func (g Grid) isVertexValid(v Vertex) bool {
+    return !(v.row < 0 || v.row >= len(g) || v.col < 0 || v.col >= len(g[0]))
+}
+
+func (v Vertex) stepInDirection(direction int) Vertex {
+    newVert := v
+    if direction == Down {
+        newVert.row++
+    } else if direction == Up {
+        newVert.row--
+    } else if direction == Left {
+        newVert.col--
+    } else if direction == Right {
+        newVert.col++
+    }
+    return newVert
 }
 
 func parseInput(fileName string) [][]int {
