@@ -9,10 +9,21 @@ import (
 	"strings"
 )
 
-type Node struct {
-	label string
-	left  string
-	right string
+const (
+	Up    int = 1
+	Right     = 2
+	Down      = 3
+	Left      = 4
+)
+
+type Vertex struct {
+	row int
+	col int
+}
+
+type Approach struct {
+	direction  int //direction enum
+	lineLength int //num steps in this direction
 }
 
 func main() {
@@ -20,6 +31,18 @@ func main() {
 
 	fmt.Println(data)
 
+	spt := make(map[Vertex]map[Approach]int)
+
+	startVertex := Vertex{row: 0, col: 0}
+	endVertex := Vertex{len(data) - 1, len(data[0]) - 1}
+
+	startApproach := Approach{}
+
+	for _, prs := spt[endVertex]; !prs; _, prs = spt[endVertex] {
+
+	}
+
+	//fmt.Println(cost)
 }
 
 func parseInput(fileName string) [][]int {
