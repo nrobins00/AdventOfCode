@@ -1,0 +1,161 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+
+void addRuletoRuleSet(int *ruleSet, int numToAdd) {
+    printf("adding rule\n");
+    int i=0;
+    while (ruleSet[i] != -1) {
+        i++;
+    }
+
+    ruleSet[i] = numToAdd;
+    ruleSet[i+1] = -1;
+}
+
+int checkUpdate(int **rules, int *updateToCheck) {
+    int i=0;
+    int currNum;
+    int currRule;
+    for (; updateToCheck[i] != -1; i++) {
+        currNum = updateToCheck[i];
+        int *ruleSet = rules[currNum];
+        for (int j=0; ruleSet[j] != -1; j++) {
+            int currRule = ruleSet[j];
+            // valid rule, so check all nums to the left
+            for (int k = 0; k < i; k++) {
+                if (updateToCheck[k] == currRule) {
+                    return 0;
+                }
+            }
+        }
+    }
+
+    int middleIndex = (i-1)/2;
+    return updateToCheck[middleIndex];
+
+}
+
+int main(int argc, char **argv) {
+    FILE *rulesFile = fopen(argv[1], "r");
+    if (rulesFile == NULL) {
+        printf("couldn't open rules file\n");
+        exit(0);
+    }
+    FILE *updatesFile = fopen(argv[2], "r");
+    if (updatesFile == NULL) {
+        printf("couldn't open rules file\n");
+        exit(0);
+    }
+
+    char currChar;
+    char leftNumStr[3];
+    int leftNumIndex = 0;
+    int rightNumIndex = 0;
+    char rightNumStr[3];
+    int leftNum = -1;
+    int rightNum = -1;
+    int **rules = (int**)malloc(100*sizeof(int*));
+    for (int i = 0; i < 100; i++) {
+        //hold up to 20 rules
+        rules[i] = (int*)malloc(100*sizeof(int));
+        rules[i][0] = -1;
+    }
+    while ((currChar = fgetc(rulesFile)) != EOF) {
+        switch (currChar) {
+        case '\n':
+            rightNumStr[rightNumIndex] = '\0';
+            rightNum = atoi(rightNumStr);
+            leftNumIndex = 0;
+            rightNumIndex = 0;
+
+            addRuletoRuleSet(rules[leftNum], rightNum);
+
+            leftNum = -1;
+            rightNum = -1;
+            break;
+        case '|':
+            leftNumStr[leftNumIndex] = '\0';
+            leftNum = atoi(leftNumStr);
+            leftNumIndex = 0;
+            break;
+        default:
+            if (leftNum == -1) {
+                    leftNumStr[leftNumIndex++] = currChar;
+            } else {
+                    rightNumStr[rightNumIndex++] = currChar;
+            }
+            break;
+        }
+    }
+    fclose(rulesFile);
+    printf("got rules\n");
+
+
+    int lineCount = 0;
+    int numCountForLine = 1;
+    int maxNumCountForLine = 0;
+    while ((currChar = fgetc(updatesFile)) != EOF) {
+        if (currChar == '\n') {
+            lineCount++;
+            if (numCountForLine > maxNumCountForLine) maxNumCountForLine = numCountForLine;
+            numCountForLine = 1;
+        } else if (currChar == ',') {
+            numCountForLine++;
+        }
+    }
+
+    printf("lineCount: %d\n", lineCount);
+    printf("maxLineCount: %d\n", maxNumCountForLine);
+    printf("got line count\n");
+    int **updatesGrid = (int**)malloc(lineCount*sizeof(int*));
+    for (int i = 0; i < lineCount; i++) {
+        //TODO: handle malloc fail
+        updatesGrid[i] = (int*)malloc(maxNumCountForLine*sizeof(int));
+    }
+
+    printf("allocated mem\n");
+    char currNumStr[3];
+    int currNumIndex=0;
+    int currLine = 0;
+    int currLineIndex = 0;
+    rewind(updatesFile);
+    while ((currChar = fgetc(updatesFile)) != EOF) {
+        switch (currChar) {
+        case '\n':
+            currNumStr[currNumIndex] = '\0';
+            updatesGrid[currLine][currLineIndex++] = atoi(currNumStr);
+            updatesGrid[currLine][currLineIndex] = -1; // sentinel value
+            for(int i = 0; i < currLineIndex; i++) {
+                    printf("%d, ", updatesGrid[currLine][i]);
+            }
+                printf("\n");
+            currLine++;
+            currNumIndex = 0;
+            currLineIndex = 0;
+            break;
+        case ',':
+            currNumStr[currNumIndex] = '\0';
+            updatesGrid[currLine][currLineIndex++] = atoi(currNumStr);
+            currNumIndex = 0;
+            break;
+        default:
+            currNumStr[currNumIndex++] = currChar;
+            break;
+        }
+
+    }
+    fclose(updatesFile);
+    printf("got all updates into grid\n");
+
+    int sum = 0;
+    for (int i = 0; i < lineCount; i++) {
+        int updateVal = checkUpdate(rules, updatesGrid[i]);
+        if (updateVal) {
+            printf("adding %d from line %d\n", updateVal, i);
+        }
+        sum += updateVal;
+    }
+    printf("sum: %d\n", sum);
+
+}
