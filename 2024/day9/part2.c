@@ -1,20 +1,22 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-int indexOfLeftmostSpace(int *blocks, int totalBlocks) {
+int indexOfSpace(int *blocks, int totalBlocks, int blocksNeeded) {
+	int currSegLen = 0;
+	int startOfSeg;
 	for (int i=0; i<totalBlocks; i++) {
 		if (blocks[i] == -1) {
-			return i;
-		}
-	}
-	return -1;
-}
-
-int indexOfRightmostFileBlock(int *blocks, int totalBlocks) {
-	for (int i=totalBlocks-1; i>=0; i--) {
-		if (blocks[i] != -1) {
-			return i;
+			if (currSegLen == 0) {
+				startOfSeg = i;
+			}
+			currSegLen++;
+			if (currSegLen == blocksNeeded) {
+				return startOfSeg;
+			}
+		} else {
+			currSegLen = 0;
 		}
 	}
 	return -1;
@@ -46,11 +48,8 @@ int main(int argc, char **argv) {
 	int fileIndex = 0;
 	int onSpace = 0;
 	while ((currChar = fgetc(file)) != EOF) {
-		//printf("%c", currChar);
-		//sprintf(currStr, "%c", currChar);
 		currNum = currChar - 48;
 		int stopNum = blockIndex + currNum;
-		//printf("blockIndex: %d; stopNum: %d\n", blockIndex, stopNum);
 		for (; blockIndex<stopNum; blockIndex++) {
 			if (onSpace) {
 				blocks[blockIndex] = -1;
@@ -64,7 +63,6 @@ int main(int argc, char **argv) {
 		}
 		onSpace = !onSpace;
 	}
-	printf("wtfasdfalksjdf\n");
 	for (int i=0; i<totalBlocks; i++) {
 		if (blocks[i] == -1) {
 			printf(".");
@@ -74,15 +72,26 @@ int main(int argc, char **argv) {
 	}
 	printf("\n");
 	// move everything to fill in gaps on left
-	int leftmostSpace;
-	int rightmostFileBlockIndex;
-	int rightmostFileBlockNum;
-	while ((leftmostSpace = indexOfLeftmostSpace(blocks, totalBlocks)) < (rightmostFileBlockIndex = indexOfRightmostFileBlock(blocks, totalBlocks))) {
-		rightmostFileBlockNum = blocks[rightmostFileBlockIndex];
-		blocks[rightmostFileBlockIndex] = -1;
-		blocks[leftmostSpace] = rightmostFileBlockNum;
+	for (int i=fileIndex-1; i>0; i--) {
+		int endOfFile = 0;
+		int startOfFile = 0;
+		for (int j=totalBlocks-1; j >=0; j--) {
+			if (blocks[j] == i && endOfFile == 0) {
+				endOfFile = j;
+			}
+			if (blocks[j] != i && endOfFile > 0) {
+				startOfFile = j+1;
+				break;
+			}
+		}
+		printf("file %d range = %d, %d\n", i, startOfFile, endOfFile);
+		int sizeOfFile = endOfFile - startOfFile + 1;
+		int newLoc = indexOfSpace(blocks, totalBlocks, sizeOfFile);
+		if (newLoc > -1 && newLoc < startOfFile) {
+			memcpy(&blocks[newLoc], &blocks[startOfFile], sizeOfFile*sizeof(int));
+			memset(&blocks[startOfFile], -1, sizeOfFile*sizeof(int));
+		}
 	}
-
 	for (int i=0; i<totalBlocks; i++) {
 		if (blocks[i] == -1) {
 			printf(".");
@@ -91,7 +100,6 @@ int main(int argc, char **argv) {
 		}
 	}
 	printf("\n");
-
 	// calculate checksum
 	uint64_t checksum=0;
 	int blockNum;
