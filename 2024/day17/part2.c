@@ -1,0 +1,164 @@
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+struct Instructions {
+	int *arr;
+	int size;
+};
+
+int isNumeric(char c) {
+	return c >= 48 && c <= 57;
+}
+
+int parseNum(FILE *file) {
+	char currString[12];
+	int index = 0;
+	int currChar;
+	while (isNumeric(currChar = fgetc(file))) {
+		currString[index++] = currChar;
+	}
+	currString[index] = '\0';
+	int num = atoi(currString);
+	return num;
+}
+
+int parseInstructions(FILE *file, int *dest) {
+	char currChar;
+	int instructionCount=0;
+	char num[2];
+	while ((currChar = fgetc(file)) != EOF) {
+		if (currChar != ',' && currChar != '\n') {
+			num[0] = currChar;
+			num[1] = '\0';
+			dest[instructionCount++] = atoi(num);
+		}
+	}
+
+	return instructionCount;
+}
+
+int convertComboOperand(int operand, int regA, int regB, int regC) {
+	switch (operand) {
+	case 0:
+	case 1:
+	case 2:
+	case 3:
+		return operand;
+	case 4:
+		return regA;
+	case 5:
+		return regB;
+	case 6:
+		return regC;
+	case 7:
+		printf("wtf\n");
+		exit(0);
+	}
+	return -1;
+}
+
+int main(int argc, char **argv) {
+	FILE *file = fopen(argv[1], "r");
+
+	char currChar;
+	int regA;
+	int regB;
+	int regC;
+	int doneWithRegs = 0;
+	int instructions[20];
+	int instructionCount;
+	while ((currChar = fgetc(file)) != EOF) {
+		switch (currChar) {
+		case 'A':
+			fgetc(file);
+			fgetc(file);
+			regA = parseNum(file);
+			break;
+		case 'B':
+			fgetc(file);
+			fgetc(file);
+			regB = parseNum(file);
+			break;
+		case 'C':
+			fgetc(file);
+			fgetc(file);
+			regC = parseNum(file);
+			doneWithRegs = 1;
+			break;
+		case ' ':
+			if (doneWithRegs) {
+				instructionCount = parseInstructions(file, instructions);
+			}
+		default:
+			break;
+		}
+
+	}
+	fclose(file);
+
+	//printf("Register A: %d\n", regA);
+	//printf("Register B: %d\n", regB);
+	//printf("Register C: %d\n", regC);
+	//printf("Program: ");
+	// regB = regA % 8
+	//.regB = regB ^ 1
+	// regC = regA / 8 == 0
+	// regA = regA / 8 == 0
+	// regB = regB ^ regC == 
+	// regB = regB ^ 5 == 
+	// regB % 8 == 0
+	// regB is a multiple of 8
+	int i=instructionCount-4;
+	while (i<instructionCount) {
+		int opCode = instructions[i];
+		int operand = instructions[i+1];
+
+		switch (opCode) {
+		case 0:
+			//adv
+			operand = convertComboOperand(operand, regA, regB, regC);
+			regA = regA / powl(2, operand);
+			break;
+		case 1:
+			//bxl
+			regB = regB ^ operand;
+			break;
+		case 2:
+			//bst
+			operand = convertComboOperand(operand, regA, regB, regC);
+			regB = operand % 8;
+			break;
+		case 3:
+			//jnz
+			if (regA == 0) {
+				break;
+			}
+			i = operand;
+			continue; // avoid incrementing
+			break;
+		case 4:
+			//bxc
+			regB = regB ^ regC;
+			break;
+		case 5:
+			//out
+			operand = convertComboOperand(operand, regA, regB, regC);
+			operand = operand % 8;
+			printf("%d,", operand);
+			break;
+		case 6:
+			//bdv
+			operand = convertComboOperand(operand, regA, regB, regC);
+			regB = regA / powl(2, operand);
+			break;
+		case 7: 
+			//cdv
+			operand = convertComboOperand(operand, regA, regB, regC);
+			regC = regA / powl(2, operand);
+			break;
+		}
+		i += 2;
+	}
+	printf("\n");
+}
