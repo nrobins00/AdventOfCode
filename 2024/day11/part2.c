@@ -167,8 +167,10 @@ int main(int argc, char **argv) {
 	//printf("num stones: %lu\n", stones.numStones);
 	uint64_t total = 0;
 	for (int i=0; i<stones.distinctCount; i++) {
+		printf("%lu\n", stones.arr[i].no);
 		total += stones.arr[i].quant;
 	}
+	printf("distinct stones encountered: %u\n", stones.distinctCount);
 	printf("total stones: %lu\n", total);
 
 

@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -12,6 +13,7 @@ void printGame(struct Game game) {
 }
 
 void popNextNum(struct Game *game, int num) {
+	printf("setting %d\n", num);
 	if (game->Ax == 0) {
 		game->Ax = num;
 		return;
@@ -41,7 +43,7 @@ void popNextNum(struct Game *game, int num) {
 struct Game parseGame(FILE *file) {
 	char currChar;
 	int step = 0;
-	int done;
+	int done=0;
 	int onNum = 0;
 	char curString[7];
 	int strIdx = 0;
@@ -60,6 +62,7 @@ struct Game parseGame(FILE *file) {
 			if (onNum) {
 				curString[strIdx] = '\0';
 				popNextNum(&game, atoi(curString));
+				strIdx=0;
 				onNum=0;
 			}
 		default:
@@ -75,11 +78,43 @@ struct Game parseGame(FILE *file) {
 	return game;
 }
 
+int solveGame(struct Game game) {
+	int A = 0;
+	int B = 0;
+
+	//A = (game.X*game.By/game.Bx-game.Y)/(game.Ax*game.By/game.Bx-game.Ay);
+	A = (game.X*game.By - game.Y*game.Bx) /
+		(game.Ax*game.By - game.Ay * game.Bx);
+	if (A <= 0) {
+		printf("can't solve this game (A=%d) \n", A);
+		return 0;
+	}
+	B = (game.Y - game.Ay*A) / game.By;
+
+	if (A > 100 || B > 100) {
+		printf("GREATER THAN 100!! %d, %d\n", A, B);
+	}
+
+	if (A*game.Ax + B*game.Bx != game.X ||
+		A*game.Ay + B*game.By != game.Y) {
+		printf("can't solve this game (A=%d, B=%d)\n", A, B);
+		return 0;
+	}
+	printf("A = %d; B = %d\n", A, B);
+	return A*3+B;
+}
+
 int main(int argc, char **argv) {
 	FILE *file = fopen(argv[1], "r");
 
-	struct Game game = parseGame(file);
-	printGame(game);
+	struct Game game;
+	uint32_t total = 0;
+	while ((game = parseGame(file)).Y > 0) {
+		printGame(game);
+		total += solveGame(game);
+	}
+
+	printf("total: %u\n", total);
 
 	fclose(file);
 }

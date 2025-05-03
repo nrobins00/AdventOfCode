@@ -5,7 +5,6 @@
 #include <fstream>
 #include <tuple>
 #include <vector>
-#include <format>
 
 using namespace std;
 
@@ -48,9 +47,8 @@ int main(int argc, char **argv) {
 	//
 	map<string, int> maxCosts;
 	long long sum = 0;
-	for (int i=0; i<nums.size(); i++) {
+	for (long long num : nums) {
 		map<string, int> costs;
-		long long num = nums[i];
 
 		long long lastPrice = num % 10;
 		long long p1;

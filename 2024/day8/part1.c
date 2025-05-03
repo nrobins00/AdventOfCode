@@ -63,7 +63,8 @@ void readGridFromFile(struct Grid *grid, FILE *file) {
     int row=0;
     int col=0;
     int antenIdx = 0;
-    struct Node *newNode;
+    struct Node newNode;
+    struct Pos newPos;
     while ((currChar = fgetc(file)) != EOF) {
         switch (currChar) {
         case '\n':
@@ -74,11 +75,11 @@ void readGridFromFile(struct Grid *grid, FILE *file) {
             col++;
             break;
         default:
-            newNode = (struct Node*)malloc(sizeof(struct Node));
-            newNode->pos.row = row;
-            newNode->pos.col = col;
-            newNode->id = currChar;
-            antens[antenIdx++] = *newNode;
+            newPos.row = row;
+            newPos.col = col++;
+            newNode.pos = newPos;
+            newNode.id = currChar;
+            antens[antenIdx++] = newNode;
             break;
         }
     }
@@ -88,12 +89,59 @@ void readGridFromFile(struct Grid *grid, FILE *file) {
     grid->colCount = colCount;
     grid->antennas = antens;
     grid->numAntennas = nodeCount;
+    grid->antinodeList = (struct Pos*)malloc(nodeCount*2*sizeof(struct Pos));
+    grid->numAntinodes = 0;
 }
 
-int checkBounds(struct Grid grid, int x, int y) {
-    if (x < 0 || x > grid.colCount-1) return 0;
-    if (y < 0 || y > grid.rowCount-1) return 0;
+int checkBounds(struct Grid grid, struct Pos pos) {
+    if (pos.row < 0 || pos.row > grid.rowCount-1) return 0;
+    if (pos.col < 0 || pos.col > grid.colCount-1) return 0;
     return 1;
+}
+
+int addAntinodeToList(struct Pos *antinodeList, int listSize, struct Pos nodeToAdd) {
+    // check for already there
+    struct Pos curPos;
+    for (int i=0; i<listSize; i++) {
+        curPos = antinodeList[i];
+        if (curPos.row == nodeToAdd.row && curPos.col == nodeToAdd.col) {
+            printf("duplicate found at (%d, %d)\n", curPos.row, curPos.col);
+            return 0;
+        }
+    }
+    // add
+    antinodeList[listSize] = nodeToAdd;
+    return 1;
+}
+
+void checkForAntinodes(struct Grid *grid, struct Node node1, struct Node node2) {
+    if (node1.id != node2.id) return;
+    printf("checking %c (%d, %d) and (%d, %d)\n", node1.id, node1.pos.row, node1.pos.col,
+           node2.pos.row, node2.pos.col);
+    struct Pos node3;
+    int rise, run;
+    rise = node2.pos.row - node1.pos.row;
+    run = node2.pos.col - node1.pos.col;
+
+    // check both directions
+    int numFound = 0;
+    // node2 + rise/run
+    node3.row = node2.pos.row + rise;
+    node3.col = node2.pos.col + run;
+
+    if (checkBounds(*grid, node3)) {
+        printf("found antinode at (%d, %d)\n", node3.row, node3.col);
+        grid->numAntinodes += addAntinodeToList(grid->antinodeList, grid->numAntinodes, node3);
+    }
+    //
+    // node1 - rise/run
+    node3.row = node1.pos.row - rise;
+    node3.col = node1.pos.col - run;
+    if (checkBounds(*grid, node3)) {
+        printf("found antinode at (%d, %d)\n", node3.row, node3.col);
+        grid->numAntinodes += addAntinodeToList(grid->antinodeList, grid->numAntinodes, node3);
+    }
+
 }
 
 int main(int argc, char** argv) {
@@ -108,7 +156,13 @@ int main(int argc, char** argv) {
     fclose(inputFile);
 
     printGrid(grid);
+    for (int i=1; i<grid.numAntennas; i++) {
+        for (int j=0; j<i; j++) {
+            checkForAntinodes(&grid, grid.antennas[i], grid.antennas[j]);
+        }
+    }
 
+    printf("antinodes found: %d\n", grid.numAntinodes);
 
     free(grid.antennas);
     //free(grid.antinodeList);

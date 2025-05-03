@@ -326,11 +326,6 @@ int main(int argc, char **argv) {
 	for (int i=0; i<700; i++) {
 		memo[i]=0;
 	}
-	//memo[0] = 1;
-	//memo[1*26] = 1;
-	//memo[2*26] = 1;
-	//memo[3*26] = 1;
-	//memo[4*26] = 1;
 
 	char curPos[26];
 	for (int i=0; i<26; i++) {

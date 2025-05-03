@@ -95,62 +95,30 @@ int findPathIndex(struct PointList path, struct Point point) {
 	return -1;
 }
 
+int absDiff(int a, int b) {
+	if (a > b) {
+		return a - b;
+	}
+	return b - a;
+}
+
+int pointDiff(struct Point p1, struct Point p2) {
+	int dist = 0;
+	dist += absDiff(p1.row, p2.row);
+	dist += absDiff(p1.col, p2.col);
+	return dist;
+}
+
 int findShortcuts(struct Grid grid, struct PointList path) {
 	int found=0;
 	for (int i=0; i<path.size; i++) {
-		struct Point cur = path.arr[i];
-		struct Point skipPoint;
-		struct Point secondPoint;
-		//UP
-		skipPoint.row = cur.row-1;
-		skipPoint.col = cur.col;
-
-		secondPoint.row = cur.row-2;
-		secondPoint.col = cur.col;
-		if (getCharAt(grid, skipPoint) == '#' && getCharAt(grid, secondPoint) != '#') {
-			int newIndex = findPathIndex(path, secondPoint);
-			int saved = newIndex - i - 2;
-			if (saved > 99) {
-				found++;
-			}
-		}
-		//RIGHT
-		skipPoint.row = cur.row;
-		skipPoint.col = cur.col+1;
-
-		secondPoint.row = cur.row;
-		secondPoint.col = cur.col+2;
-		if (getCharAt(grid, skipPoint) == '#' && getCharAt(grid, secondPoint) != '#') {
-			int newIndex = findPathIndex(path, secondPoint);
-			int saved = newIndex - i - 2;
-			if (saved > 99) {
-				found++;
-			}
-		}
-		//
-		//DOWN
-		skipPoint.row = cur.row+1;
-		skipPoint.col = cur.col;
-
-		secondPoint.row = cur.row+2;
-		secondPoint.col = cur.col;
-		if (getCharAt(grid, skipPoint) == '#' && getCharAt(grid, secondPoint) != '#') {
-			int newIndex = findPathIndex(path, secondPoint);
-			int saved = newIndex - i - 2;
-			if (saved > 99) {
-				found++;
-			}
-		}
-		//
-		//LEFT
-		skipPoint.row = cur.row;
-		skipPoint.col = cur.col-1;
-
-		secondPoint.row = cur.row;
-		secondPoint.col = cur.col-2;
-		if (getCharAt(grid, skipPoint) == '#' && getCharAt(grid, secondPoint) != '#') {
-			int newIndex = findPathIndex(path, secondPoint);
-			int saved = newIndex - i - 2;
+		struct Point start = path.arr[i];
+		for (int j=i+1; j<path.size; j++) {
+			struct Point end = path.arr[j];
+			int shortcutDist = pointDiff(start, end);
+			int pathDist = j-i;
+			if (shortcutDist > 20) { continue; }
+			int saved = pathDist - shortcutDist ;
 			if (saved > 99) {
 				found++;
 			}
